@@ -33,7 +33,9 @@ get_basemap <-  function(location, ...){
   }
 }
 
-get_basemap_elements <- function(basemap, orientation = T, arrow_north_size = 8, scalebar_pos="bottomleft"){
+get_basemap_elements <- function(basemap, orientation = T, arrow_north_size = 8, scalebar_pos="bottomleft", dist.unit = "km",
+                                 rec.fill = "white", rec.colour = "black", rec2.fill = "black", rec2.colour = "black", legend.colour = "black",
+                                 legend.size = 3, arrow.length = 500, arrow.distance = 300, round_scale = 2){
   
   bbox_basemap <- attributes(basemap)$bb
   # lon_dist <- distHaversine(c(bbox_background$ll.lon,bbox_background$ll.lat), c(bbox_background$ur.lon, bbox_background$ll.lat))
@@ -67,7 +69,8 @@ get_basemap_elements <- function(basemap, orientation = T, arrow_north_size = 8,
     }
   }
   scaleBar(lon = lon, lat = lat, distanceLon = distance_lon, distanceLat = distance_lat, distanceLegend = distance_legend,
-           dist.unit = "km", arrow.length = arrow_length, arrow.distance = arrow.distance, arrow.North.size = arrow_north_size, orientation = orientation)
+           dist.unit = "km", arrow.length = arrow_length, arrow.distance = arrow.distance, arrow.North.size = arrow_north_size, orientation = orientation,rec.fill = rec.fill,
+           rec.colour = rec.colour, rec2.fill = rec2.fill, rec2.colour = rec2.colour, legend.colour = legend.colour, legend.size = legend.size, round_scale = round_scale)
 }
 
 add_basemap_elements <- function(basemap, basemap_elements, extent = "device", ...){
@@ -78,9 +81,8 @@ add_basemap_elements <- function(basemap, basemap_elements, extent = "device", .
 
 ########################################################################################################################
 
-add_points <- function(basemap, sf_df, basemap_elements = NULL, colour_by_fields = NULL, colour = NULL,
-                       d3_palette = NULL, alpha_points = 0.8, legend_background = "grey", alpha_legend = 0.1,
-                       size = 2, legend_text = "", ...){
+add_points <- function(basemap, sf_df, basemap_elements = NULL, colour_by_fields = NULL, colour = NULL, d3_palette = NULL, alpha_points = 0.8,
+                        alpha_legend = 0.1, legend_key_fill = "white", legend_background_fill = "grey", size = 2, legend_text = "", legend_pos = "bottomright",  ...){
   
   sfc_tr <- st_transform(st_geometry(sf_df), 4326)
   coords <- do.call(rbind, unclass(sfc_tr))
@@ -98,9 +100,9 @@ add_points <- function(basemap, sf_df, basemap_elements = NULL, colour_by_fields
       #   theme(legend.background = element_rect(fill=alpha('grey', 0.1))) + 
       #   scaleBar(lon = lon, lat = lat, distanceLon = distance_lon, distanceLat = distance_lat, distanceLegend = distance_legend,
       #            dist.unit = "km", arrow.length = arrow_length, arrow.distance = arrow.distance, arrow.North.size = arrow_north_size, orientation = orientation)
-      map_temp <- ggmap(basemap, extent = 'device', legend = "bottomright", padding = 0.05) +
+      map_temp <- ggmap(basemap, extent = 'device', legend = legend_pos, padding = 0.05) +
         geom_point(data = sf_df, aes_string(x="long", y="lat", colour = field_name), size=size, alpha = alpha_points) +
-        theme(legend.background = element_rect(fill=alpha(legend_background, alpha_legend))) +
+        theme(legend.background = element_rect(fill=alpha(legend_background_fill, alpha_legend))) +
         basemap_elements
                  
       if (!is.null(d3_palette)){
@@ -109,19 +111,23 @@ add_points <- function(basemap, sf_df, basemap_elements = NULL, colour_by_fields
       maps[[field_name]] <- map_temp
     }
   } else if (!is.null(colour)){
-    maps <- list(ggmap(basemap, extent = 'device', legend = "bottomright", padding = 0.05) +
-                   geom_point(data = sf_df, aes(x=long, y=lat, colour = "location"), size=size, alpha = alpha, show.legend = T) +
+    maps <- list(ggmap(basemap, extent = 'device', legend = legend_pos, padding = 0.05) +
+                   geom_point(data = sf_df, aes(x=long, y=lat, colour = "location"), size=size, alpha = alpha_points, show.legend = T) +
                    scale_colour_manual(name=legend_text, values=c(location=colour)) + 
-                   theme(legend.background = element_rect(fill=alpha('grey', 0.1)),
+                   theme(legend.background = element_rect(fill=alpha(legend_background_fill, alpha_legend)),
                          legend.text = element_text(size=rel(1.2)),
-                         legend.title = element_text(size = rel(1.5))) + 
-                   scaleBar(lon = lon, lat = lat, distanceLon = distance_lon, distanceLat = distance_lat, distanceLegend = distance_legend,
-                            dist.unit = "km", arrow.length = arrow_length, arrow.distance = arrow.distance, arrow.North.size = arrow_north_size, orientation = orientation)
+                         legend.title = element_text(size = rel(1.5)),
+                         legend.key = element_rect(fill = legend_key_fill)) +
+                   basemap_elements
     )
   }
   
   maps
   
+}
+
+add_text <- function(map_list, x, y, txt, size, colour, family, ...){
+  lapply(1:length(map_list), function(i) map_list[[i]] + annotate("text", x = x, y = y, label = txt, size = size, colour = colour, family = family, ...))
 }
 
 

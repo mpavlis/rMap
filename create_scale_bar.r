@@ -24,7 +24,7 @@ library(grid)
 # model: choice of ellipsoid model ("WGS84", "GRS80", "Airy", "International", "Clarke", "GRS67")                                        #
 ##########################################################################################################################################
 
-createScaleBar <- function(lon, lat, distanceLon, distanceLat, distanceLegend, dist.units = "km", model = "WGS84"){
+createScaleBar <- function(lon, lat, distanceLon, distanceLat, distanceLegend, dist.units = "km", model = "WGS84", round_scale = 1){
   # First rectangle
   bottomRight <- gcDestination(lon = lon, lat = lat, bearing = 90, dist = distanceLon, dist.units = dist.units, model = model)
   
@@ -46,7 +46,7 @@ createScaleBar <- function(lon, lat, distanceLon, distanceLat, distanceLegend, d
   onTop3[1,"long"] <- bottomRight2[1,"long"]
   
   legend <- rbind(onTop, onTop2, onTop3)
-  legend <- data.frame(cbind(legend, text = c(0, round(distanceLon,digits = 1), round(distanceLon*2,digits = 1))), stringsAsFactors = FALSE, row.names = NULL)
+  legend <- data.frame(cbind(legend, text = c(0, round(distanceLon, digits = round_scale), round(distanceLon*2,digits = round_scale))), stringsAsFactors = FALSE, row.names = NULL)
   return(list(rectangle = rectangle, rectangle2 = rectangle2, legend = legend))
 }
 
@@ -120,7 +120,7 @@ createOrientationArrow <- function(scaleBar, length, distance = 1, dist.units = 
 ###########################################################################################################################################
 scaleBar <- function(lon, lat, distanceLon, distanceLat, distanceLegend, dist.unit = "km", rec.fill = "white", rec.colour = "black",
                      rec2.fill = "black", rec2.colour = "black", legend.colour = "black", legend.size = 3, orientation = TRUE,
-                     arrow.length = 500, arrow.distance = 300, arrow.North.size = 6){
+                     arrow.length = 500, arrow.distance = 300, arrow.North.size = 6, round_scale = 2){
   laScaleBar <- createScaleBar(lon = lon, lat = lat, distanceLon = distanceLon, distanceLat = distanceLat, distanceLegend = distanceLegend, dist.unit = dist.unit)
   # First rectangle
   rectangle1 <- geom_polygon(data = laScaleBar$rectangle, aes(x = lon, y = lat), fill = rec.fill, colour = rec.colour)
@@ -129,7 +129,7 @@ scaleBar <- function(lon, lat, distanceLon, distanceLat, distanceLegend, dist.un
   rectangle2 <- geom_polygon(data = laScaleBar$rectangle2, aes(x = lon, y = lat), fill = rec2.fill, colour = rec2.colour)
   
   # Legend
-  scaleBarLegend <- annotate("text", label = paste(round(laScaleBar$legend$text,2), dist.unit, sep=""), x = laScaleBar$legend[,"long"], y = laScaleBar$legend[,"lat"], size = legend.size, colour = legend.colour)
+  scaleBarLegend <- annotate("text", label = paste(round(laScaleBar$legend$text, round_scale), dist.unit, sep=""), x = laScaleBar$legend[,"long"], y = laScaleBar$legend[,"lat"], size = legend.size, colour = legend.colour)
   
   res <- list(rectangle1, rectangle2, scaleBarLegend)
   
